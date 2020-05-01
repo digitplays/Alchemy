@@ -23,7 +23,7 @@ namespace Tome
 
         public bool AutoManageDatabaseStructure = false;
 
-     
+
         public async Task Log(string toLog, string FileName = "DefaultLogName")
         {
             Directory.CreateDirectory((AppDomain.CurrentDomain.BaseDirectory + @"Logs\"));
@@ -126,12 +126,12 @@ namespace Tome
                     }
                     else
                     {
-                        
-                        if(MSSQLMapping.MSSQL_Types_ToCSharp.FirstOrDefault(X=>X.TMCSharpType == OD.ObjectTypes[index]) != null)
+
+                        if (MSSQLMapping.MSSQL_Types_ToCSharp.FirstOrDefault(X => X.TMCSharpType == OD.ObjectTypes[index]) != null)
                         {
                             var t = OD.ObjectTypes[index];
 
-                            
+
                             if (rdr[OD.ObjectParameters[index]] == null || rdr[OD.ObjectParameters[index]] == System.DBNull.Value)
                             {
                                 OD.ObjectValues[index] = null;
@@ -142,11 +142,11 @@ namespace Tome
                             {
                                 t = typeof(string);
                             }
-                            
-                                dynamic changedObj = Convert.ChangeType(rdr[OD.ObjectParameters[index]], t);
 
-                                OD.ObjectValues[index] = changedObj;
-                           
+                            dynamic changedObj = Convert.ChangeType(rdr[OD.ObjectParameters[index]], t);
+
+                            OD.ObjectValues[index] = changedObj;
+
 
                         }
                         else
@@ -171,7 +171,7 @@ namespace Tome
                 return null;
             }
         }
-     
+
 
         public async Task<List<T>> SelectMany<T>(List<T> input, string TableName, bool SelectAll = false, string OverrideSQL = "", SqlCommand OverrideCMD = null)
         {
@@ -227,7 +227,7 @@ namespace Tome
                                 SQL = OverrideSQL;
                                 cmd = new SqlCommand(SQL, conn);
                             }
-                            
+
                         }
                         else
                         {
@@ -435,13 +435,13 @@ namespace Tome
                     {
                         OD = GetDictionary(objList[index], PlaceHolder);
                     }
-                    return await Write(OD, TableName,  IdentifierColumn);
+                    return await Write(OD, TableName, IdentifierColumn);
                 }
             }
             else
             {
                 ObjectDictionary OD = GetDictionary(input);
-                return await Write(OD, TableName,  IdentifierColumn);
+                return await Write(OD, TableName, IdentifierColumn);
             }
             return 0;
 
@@ -515,13 +515,13 @@ namespace Tome
             SqlCommand cmd = new SqlCommand(SQL, conn);
             try
             {
-               
+
 
                 for (int index = 0; index < OD.ObjectCount; index++)
                 {
                     if (OD.ObjectValues[index] != null)
                     {
-                       
+
                         cmd.Parameters.AddWithValue("@" + OD.ObjectParameters[index], OD.ObjectValues[index]);
                     }
                     else
@@ -532,7 +532,7 @@ namespace Tome
                 conn.Open();
                 cmd.ExecuteNonQuery();
                 conn.Close();
-               
+
             }
             catch (Exception ex)
             {
@@ -663,7 +663,7 @@ namespace Tome
         private string CType_To_SQLType(Type ItemType)
         {
             TypeMapper TM = MSSQLMapping.MSSQL_Types_ToCSharp.FirstOrDefault(X => X.TMCSharpType == ItemType);
-            if(TM == null)
+            if (TM == null)
             {
                 return MSSQLMapping.MSSQL_Types_ToCSharp.FirstOrDefault(X => X.TMCSharpType == typeof(object)).TMSQLType;
             }
@@ -673,7 +673,7 @@ namespace Tome
             }
         }
 
-      
+
 
         private async Task<object> RunSQL(string SQLScript)
         {
@@ -783,26 +783,25 @@ namespace Tome
                 int Property_Count = properties.Count();
                 for (int index = 0; index < Property_Count; index++)
                 {
+                    string Ovalue = properties[index].Name;
+
+                    object Property_Value = GetPropValue(input, Ovalue);
                     if (properties[index].PropertyType.IsGenericType && (properties[index].PropertyType.GetGenericTypeDefinition().Equals(typeof(Nullable<>))) || properties[index].PropertyType == typeof(string) || properties[index].PropertyType == typeof(byte?[]))
                     {
-                        string Ovalue = properties[index].Name;
-                      
-                        object Property_Value = GetPropValue(input, Ovalue);
-                        
                         Type Property_Type = properties[index].PropertyType;
                         if (Property_Type == typeof(byte?[]))
                         {
                             Property_Type = typeof(byte[]);
-                      
+
                             if (Property_Value != null)
                             {
                                 byte[] target = ((byte?[])Property_Value).Select(b => b.GetValueOrDefault()).ToArray();
-                                Property_Value =target;
+                                Property_Value = target;
                             }
                         }
-                    
+
                         TypeMapper TM = MSSQLMapping.MSSQL_Types_ToCSharp.FirstOrDefault(X => X.TMCSharpType == Property_Type);
-                        if(TM == null)
+                        if (TM == null)
                         {
                             TM = MSSQLMapping.MSSQL_Types_ToCSharp.FirstOrDefault(X => X.TMCSharpType == typeof(object));
                         }
@@ -823,6 +822,17 @@ namespace Tome
                             Parameters_Values.Add(Property_Value);
                         }
                         else
+                        {
+                            Parameters_Values.Add(null);
+                        }
+                    }
+                    else
+                    {
+                        try
+                        {
+                            Parameters_Values.Add(System.Text.Json.JsonSerializer.Serialize(Property_Value));
+                        }
+                        catch(Exception ex)
                         {
                             Parameters_Values.Add(null);
                         }
@@ -857,7 +867,7 @@ namespace Tome
 
         }
 
-        
+
 
 
         public async Task<bool> TestConnection()
@@ -928,4 +938,3 @@ namespace Tome
         public string TMSQLType { get; set; }
     }
 }
-
