@@ -27,7 +27,7 @@ namespace Tome
         public async Task Log(string toLog, string FileName = "DefaultLogName")
         {
             Directory.CreateDirectory((AppDomain.CurrentDomain.BaseDirectory + @"Logs\"));
-            using (StreamWriter sw = new StreamWriter(AppDomain.CurrentDomain.BaseDirectory + @"Logs\" + FileName + ".ABS"))
+            using (StreamWriter sw = new StreamWriter(AppDomain.CurrentDomain.BaseDirectory + @"Logs\" + FileName + ".Log"))
             {
                 await sw.WriteLineAsync(toLog);
             }
