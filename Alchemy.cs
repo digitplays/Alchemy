@@ -417,7 +417,7 @@ namespace Tome
         }
 
 
-        public async Task<int> Save<T>(T input, string TableName, bool identityInsert = true, string IdentifierColumn = "id")
+        public async Task<int> Insert<T>(T input, string TableName, string IdentifierColumn = "id")
         {
             if (typeof(IEnumerable).IsAssignableFrom(input.GetType()))
             {
@@ -435,13 +435,13 @@ namespace Tome
                     {
                         OD = GetDictionary(objList[index], PlaceHolder);
                     }
-                    return await Write(OD, TableName, identityInsert, IdentifierColumn);
+                    return await Write(OD, TableName,  IdentifierColumn);
                 }
             }
             else
             {
                 ObjectDictionary OD = GetDictionary(input);
-                return await Write(OD, TableName, identityInsert, IdentifierColumn);
+                return await Write(OD, TableName,  IdentifierColumn);
             }
             return 0;
 
@@ -471,7 +471,7 @@ namespace Tome
 
         }
 
-        private async Task<int> Write(ObjectDictionary OD, string TableName, bool identityInsert = true, string IdentifierColumn = "id")
+        private async Task<int> Write(ObjectDictionary OD, string TableName, string IdentifierColumn = "id")
         {
             int MaxID = 0;
             string Post_SQL = "";
@@ -515,10 +515,7 @@ namespace Tome
             SqlCommand cmd = new SqlCommand(SQL, conn);
             try
             {
-                if (identityInsert)
-                {
-                    await RunSQL("SET IDENTITY_INSERT " + TableName + " ON");
-                }
+               
 
                 for (int index = 0; index < OD.ObjectCount; index++)
                 {
@@ -535,10 +532,7 @@ namespace Tome
                 conn.Open();
                 cmd.ExecuteNonQuery();
                 conn.Close();
-                if (identityInsert)
-                {
-                    await RunSQL("SET IDENTITY_INSERT " + TableName + " OFF");
-                }
+               
             }
             catch (Exception ex)
             {
