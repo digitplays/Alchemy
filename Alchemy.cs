@@ -11,8 +11,6 @@ using System.Threading.Tasks;
 using System.Text.Json;
 namespace Tome
 {
-
-
     public class Alchemy
     {
 
