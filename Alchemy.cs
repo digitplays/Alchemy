@@ -781,14 +781,18 @@ namespace Tome
 
                 var properties = input.GetType().GetProperties();
                 int Property_Count = properties.Count();
+                
                 for (int index = 0; index < Property_Count; index++)
                 {
                     string Ovalue = properties[index].Name;
 
                     object Property_Value = GetPropValue(input, Ovalue);
-                    if (properties[index].PropertyType.IsGenericType && (properties[index].PropertyType.GetGenericTypeDefinition().Equals(typeof(Nullable<>))) || properties[index].PropertyType == typeof(string) || properties[index].PropertyType == typeof(byte?[]))
+                    Type Property_Type = properties[index].PropertyType;
+                    bool isGenericType = properties[index].PropertyType.IsGenericType;
+                    TypeMapper TM = MSSQLMapping.MSSQL_Types_ToCSharp.FirstOrDefault(X => X.TMCSharpType == Property_Type);
+                    if (Property_Type.IsGenericType && (Property_Type.GetGenericTypeDefinition().Equals(typeof(Nullable<>))) || Property_Type == typeof(string) || Property_Type == typeof(byte?[]))
                     {
-                        Type Property_Type = properties[index].PropertyType;
+                        
                         if (Property_Type == typeof(byte?[]))
                         {
                             Property_Type = typeof(byte[]);
@@ -800,7 +804,7 @@ namespace Tome
                             }
                         }
 
-                        TypeMapper TM = MSSQLMapping.MSSQL_Types_ToCSharp.FirstOrDefault(X => X.TMCSharpType == Property_Type);
+                        TM = MSSQLMapping.MSSQL_Types_ToCSharp.FirstOrDefault(X => X.TMCSharpType == Property_Type);
                         if (TM == null)
                         {
                             TM = MSSQLMapping.MSSQL_Types_ToCSharp.FirstOrDefault(X => X.TMCSharpType == typeof(object));
@@ -809,35 +813,49 @@ namespace Tome
                         {
                             Property_Value = System.Text.Json.JsonSerializer.Serialize(Property_Value);
                         }
-
                         Parameter_Types.Add(Property_Type);
-                        while (Ovalue.Contains(TheoreticalSpace))
-                        {
-                            Ovalue = Ovalue.Replace(TheoreticalSpace, " ");
-                        }
-                        Parameters.Add(Ovalue);
-                        //name of property
-                        if (!(IsNullOrDefault(Property_Value)))
-                        {
-                            Parameters_Values.Add(Property_Value);
-                        }
-                        else
-                        {
-                            Parameters_Values.Add(null);
-                        }
+                    }
+                    else if(TM == null && isGenericType || Property_Type == typeof(bool))
+                    {
+                        continue;
                     }
                     else
                     {
                         try
                         {
-                            Parameters_Values.Add(System.Text.Json.JsonSerializer.Serialize(Property_Value));
+                            if (!(IsNullOrDefault(Property_Value)))
+                            {
+                                Property_Value = (System.Text.Json.JsonSerializer.Serialize(Property_Value));
+                                Parameter_Types.Add(typeof(object));
+                            }
+                            else
+                            {
+                                Parameter_Types.Add(typeof(object));
+                                Property_Value = (null);
+                            }
+                            
                         }
-                        catch(Exception ex)
+                        catch (Exception ex)
                         {
-                            Parameters_Values.Add(null);
+                            Parameter_Types.Add(typeof(object));
+                            Property_Value = (null);
                         }
                     }
-
+                    
+                    while (Ovalue.Contains(TheoreticalSpace))
+                    {
+                        Ovalue = Ovalue.Replace(TheoreticalSpace, " ");
+                    }
+                    Parameters.Add(Ovalue);
+                    //name of property
+                    if (!(IsNullOrDefault(Property_Value)))
+                    {
+                        Parameters_Values.Add(Property_Value);
+                    }
+                    else
+                    {
+                        Parameters_Values.Add(null);
+                    }
                 }
                 return new ObjectDictionary() { ObjectParameters = Parameters, ObjectValues = Parameters_Values, ObjectTypes = Parameter_Types, ObjectCount = Parameters_Values.Count, ObjectType = input.GetType() };
             }
